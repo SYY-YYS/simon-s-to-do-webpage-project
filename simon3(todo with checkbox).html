@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <input id="text-box" type="text" placeholder="to-do item" required>
+        <input id='selected-date' type="date" required>
+        <button type='submit' id="submit-todo" onclick="submitTodo()">Add</button>
+    </head>
+    <body>
+        <div id="items"></div>
+    </body>
+    <script>
+        // model
+
+        let todos; 
+        const savedTodos = JSON.parse(localStorage.getItem('todos'));
+        if (Array.isArray(savedTodos)) {
+            todos = savedTodos;
+        } else {
+            let today = new Date().toISOString().slice(0,10); // to turn the dueDate to be the day after clearing the localStorage
+            todos = [{
+            title: 'Bf',
+            dueDate: today,
+            id: 'id1'
+        }, {
+            title: 'lunch',
+            dueDate: today,
+            id: 'id2'
+        }, {
+            title: 'dinner',
+            dueDate: today,
+            id: 'id3'
+        }]
+        };
+        function saveTodos() {
+            localStorage.setItem('todos', JSON.stringify(todos));
+        }
+
+        // view
+        document.title = 'To-do list page';
+
+        function render() {
+            document.getElementById('items').innerHTML = '';
+            for (let i = 0; i < todos.length; i++) {
+                let item = document.createElement('div');
+                item.innerText = todos[i]['title'] + ' ' + todos[i]['dueDate'];
+                checkboxButton(item,i);
+                editButton(item,i);
+                if (todos[i].isEditing === true) {
+                    editItems(item,i);
+                }                
+                deleteButton(item,i);
+                document.getElementById('items').appendChild(item);
+                if (todos[i].isDone === true) {
+                    document.getElementById(todos[i]['id']+'ck').checked = true;
+                }
+            }
+            saveTodos();
+        }
+        render();
+        function submitTodo() {
+            let item = document.createElement('div');
+            let inputTodo = document.getElementById('text-box').value;           
+            let inputDate = document.getElementById('selected-date').value;
+            let todoid = '' + new Date().getTime();
+            todos.push({title: inputTodo,dueDate: inputDate,id: todoid});
+            render();
+        }
+        
+        // control
+        function checkboxButton(item, todoindex) {
+            let checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.dataset.todoid = todos[todoindex]['id'];
+            checkbox.id = todos[todoindex]['id']+'ck';
+            checkbox.onchange = clickCheckbox;
+            item.prepend(checkbox);
+        }
+        function clickCheckbox(event) {
+            const todoid = event.target.dataset.todoid;
+            for (let i = 0; i < todos.length; i++) {
+                if (todos[i]['id'] === todoid) {
+                    todos[i].isDone = document.getElementById(todoid+'ck').checked;
+                }
+            }
+            render();
+        }
+        function editButton(item, todoindex) {
+            let editbutton = document.createElement('button');
+            editbutton.innerText = 'Edit';
+            editbutton.dataset.todoid = todos[todoindex]['id'];
+            editbutton.id = todos[todoindex]['id']+'ed';
+            editbutton.onclick = clickEdit;
+            item.append(editbutton);
+        }
+        function clickEdit(event) {
+            const todoid = event.target.dataset.todoid;
+            for (let i = 0; i < todos.length; i++) {
+                if (todos[i]['id'] === todoid) {
+                    todos[i].isEditing = true;
+                }
+            }
+            render();
+        }
+        function editItems(item, todoindex) {
+            let textbox = document.createElement('input');
+            let datepick = document.createElement('input');
+            let updatebutton = document.createElement('button');
+            datepick.type = 'date';
+            datepick.id = 'edit-date';
+            textbox.id = 'edit-textbox';
+            updatebutton.id = todos[todoindex]['id'] + 'up';
+            updatebutton.innerText = 'Update';
+            updatebutton.onclick = clickUpdate;
+            item.append(textbox);
+            item.append(datepick);
+            item.append(updatebutton);
+        }
+        function clickUpdate(event) {
+            const todoid = event.target.id.slice(0, event.target.id.length-2)
+            // need isEditing turn false
+            for (let i = 0; i < todos.length; i++) {
+                if (todos[i]['id'] === todoid) {
+                    todos[i].isEditing = false;
+                }
+            };
+            // change values in todos and render
+            const update_todo = document.getElementById('edit-textbox').value;
+            const update_date = document.getElementById('edit-date').value;
+            for (let i = 0; i < todos.length; i++) {
+                if (todos[i]['id'] === todoid) {
+                    todos[i]['title'] = update_todo;
+                    todos[i]['dueDate'] = update_date;
+                }
+            }
+            render();
+        }
+        function deleteButton(item, todoindex) {
+            let deletebutton = document.createElement('button');
+            deletebutton.innerText = 'Delete';
+            deletebutton.id = todos[todoindex]['id'];
+            deletebutton.onclick = deleteTodo;
+            item.append(deletebutton);
+        }
+        function deleteTodo(event) {
+            const deleteid = event.target.id;
+            todos = todos.filter(function(todo) {
+                if (todo['id'] === deleteid) {
+                    return false;
+                } else {
+                    return true;
+                }
+            });
+            render();
+        }
+        
+    </script>
+</html>
